@@ -3,16 +3,21 @@ import os.path
 import hashlib
 import shutil
 from ..thread import ThreadState
+from typing import List, Set, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..thread import JavaThreadDump
 
 
 class HTMLStaticSite(object):
-    def __init__(self, timestamp_fmt="%Y-%m-%d %H:%M:%S", output_dir=None, stylesheet="stylesheet/shougun.css"):
-        self.output_dir = output_dir
-        self.stylesheet = stylesheet
-        self.timestamp_fmt = timestamp_fmt
-        self._thread_dumps = list()
+    def __init__(self, timestamp_fmt: str = "%Y-%m-%d %H:%M:%S", output_dir: str = "output", stylesheet: str = "stylesheet/shougun.css", include_stacktrace: bool = True):
+        self.output_dir: str = output_dir
+        self.stylesheet: str = stylesheet
+        self.timestamp_fmt: str = timestamp_fmt
+        self.include_stacktrace: bool = include_stacktrace
+        self._thread_dumps: List['JavaThreadDump'] = list()
 
-    def add(self, thread_dump):
+    def add(self, thread_dump: 'JavaThreadDump'):
         self._thread_dumps.append(thread_dump)
 
     def build(self):
@@ -34,9 +39,10 @@ class HTMLStaticSite(object):
             f.write(self.__table_footer())
             f.write(self.__site_footer())
 
-        logging.info("Creating thread_dump_data.js...")
-        with open(os.path.join(self.output_dir, "thread_dump_data.js"), "w") as f:
-            f.write(self.__thread_dump_javascript(unique_thread_names))
+        if self.include_stacktrace:
+            logging.info("Creating thread_dump_data.js...")
+            with open(os.path.join(self.output_dir, "thread_dump_data.js"), "w") as f:
+                f.write(self.__thread_dump_javascript(unique_thread_names))
 
         logging.info("Copying resources...")
         module_path = os.path.dirname(__file__)
@@ -46,7 +52,7 @@ class HTMLStaticSite(object):
         else:
             logging.error(f"Unable to find resources directory at {resources_path}.")
 
-    def __thread_dump_javascript(self, thread_names):
+    def __thread_dump_javascript(self, thread_names: Set[str]) -> str:
         output = ["STACK_TRACES = Object.create(null);"]
         for name in sorted(thread_names):
             for thread_dump in self._thread_dumps:
@@ -59,19 +65,19 @@ class HTMLStaticSite(object):
                     output.append(f"STACK_TRACES[\"{key}\"] = \"{data}\";")
         return "\n".join(output)
 
-    def __site_preamble(self):
+    def __site_preamble(self) -> str:
         return "<!DOCTYPE html>" \
             f"<html><head><link rel=\"stylesheet\" href=\"{self.stylesheet}\" />" \
             "</head><body><div class=\"container\"><div class=\"data-container\">"
 
-    def __table_preamble(self, headers):
+    def __table_preamble(self, headers: List[str]) -> str:
         output = ["<table class=\"data-table\"><thead><tr><th style=\"min-width:200px; width: 200px;\" class=\"col-thread-name fixed-header\" scope=\"row\">Thread name</th>"]
         for h in headers:
             output.append(f"<th>{h}</th>")
         output.append("</tr></thead>")
         return "".join(output)
 
-    def __table_body(self, thread_names):
+    def __table_body(self, thread_names: Set[str]) -> str:
         output = ["<tbody>"]
 
         for name in sorted(thread_names):
@@ -79,6 +85,7 @@ class HTMLStaticSite(object):
             row.append(f"<td class=\"col-thread-name\" scope=\"row\">{name.replace(' ', '&nbsp;')}</td>")
 
             previous_thread_dump = None
+
             for thread_dump in self._thread_dumps:
                 key = self.__key(thread_dump, name)
                 if name not in thread_dump:
@@ -124,7 +131,7 @@ class HTMLStaticSite(object):
         output.append("</tbody>")
         return "\n".join(output)
 
-    def __table_cell(self, text, attributes=None, style=None):
+    def __table_cell(self, text: str, attributes=None, style=None) -> str:
         td_attr = ""
         td_style = ""
 
@@ -136,15 +143,15 @@ class HTMLStaticSite(object):
 
         return f"<td {td_attr} {td_style}>{text}</td>"
 
-    def __table_footer(self):
+    def __table_footer(self) -> str:
         return "</table>"
 
-    def __site_footer(self):
+    def __site_footer(self) -> str:
         return "</div></div><div class=\"trace-popup\"></div>" \
             '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>' \
             '<script src="thread_dump_data.js"></script>' \
             '<script src="javascript/shougun.js"></script>' \
             '</body></html>'
 
-    def __key(self, thread_dump, thread_name):
+    def __key(self, thread_dump: 'JavaThreadDump', thread_name: str) -> str:
         return hashlib.md5(f"{thread_dump.timestamp.timestamp()}@{thread_name}".encode("utf8")).hexdigest()
