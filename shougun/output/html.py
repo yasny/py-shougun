@@ -39,7 +39,12 @@ class HTMLStaticSite(object):
             f.write(self.__thread_dump_javascript(unique_thread_names))
 
         logging.info("Copying resources...")
-        shutil.copytree("resources", self.output_dir, dirs_exist_ok=True)
+        module_path = os.path.dirname(__file__)
+        resources_path = os.path.abspath(os.path.join(module_path, '..', 'resources'))
+        if os.path.exists(resources_path):
+            shutil.copytree(resources_path, self.output_dir, dirs_exist_ok=True)
+        else:
+            logging.error(f"Unable to find resources directory at {resources_path}.")
 
     def __thread_dump_javascript(self, thread_names):
         output = ["STACK_TRACES = Object.create(null);"]
