@@ -28,6 +28,8 @@ def main():
     parser.add_argument("--stack-trace", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("-c", "--max-count", type=int, help="max count", default=-1)
     parser.add_argument("-v", "--verbose", action="count", help="verbosity level")
+    parser.add_argument("-o", "--output-dir", help="path to output directory")
+    parser.add_argument("--timestamp-fmt", help="output timestamp format")
     parser.add_argument("filename", help="Thread dump file")
 
     args = parser.parse_args()
@@ -39,7 +41,7 @@ def main():
 
     initialize_logging(log_level, "shougun")
 
-    site = HTMLStaticSite(timestamp_fmt="%H:%M:%S", output_dir="output", include_stacktrace=args.stack_trace)
+    site = HTMLStaticSite(timestamp_fmt=args.timestamp_fmt, output_dir=args.output_dir, include_stacktrace=args.stack_trace)
 
     for thread_dump in thread_dumps(args.filename,
                                     start_datetime=args.start_time,
