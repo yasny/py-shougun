@@ -3,17 +3,17 @@ import os.path
 import hashlib
 import shutil
 from ..thread import ThreadState
-from typing import List, Set, TYPE_CHECKING
+from typing import List, Set, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..thread import JavaThreadDump
 
 
 class HTMLStaticSite(object):
-    def __init__(self, timestamp_fmt: str = "%Y-%m-%d %H:%M:%S", output_dir: str = "output", stylesheet: str = "stylesheet/shougun.css", include_stacktrace: bool = True):
-        self.output_dir: str = output_dir
+    def __init__(self, timestamp_fmt: Optional[str] = None, output_dir: Optional[str] = None, stylesheet: str = "stylesheet/shougun.css", include_stacktrace: bool = True):
+        self.output_dir: str = output_dir if output_dir else "output"
         self.stylesheet: str = stylesheet
-        self.timestamp_fmt: str = timestamp_fmt
+        self.timestamp_fmt: str = timestamp_fmt if timestamp_fmt else "%Y-%m-%d %H:%M:%S"
         self.include_stacktrace: bool = include_stacktrace
         self._thread_dumps: List['JavaThreadDump'] = list()
 
