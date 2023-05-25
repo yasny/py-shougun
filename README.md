@@ -13,3 +13,11 @@ Opening the HTML file will show a large table with each thread on a separate row
 Clicking on a cell will show the stack trace for that thread.
 
 ![py-shougun sample](images/shougun-sample.png "Site Sample")
+
+## Installation
+
+`py-shougun` should be run on Python 3.10+.
+
+1. Download the source to a local directory.
+2. Run `pip3 install --user -e .` to install `py-shougun` to the local user install directory.
+3. Run `shougun --help` to view command line options.
